@@ -14,17 +14,38 @@ Use this project only on devices, networks, and accounts you own or are explicit
 
 ## Install in Termux
 
+The official repository is currently **private**. Anonymous `git clone` will not work until the owner makes the repository public or grants your GitHub account access. A GitHub timeout such as `Failed to connect to github.com:443` is a network-path problem; it happens before this toolkit runs.
+
+For an authorized GitHub account, install the GitHub CLI and authenticate first:
+
+```bash
+pkg update
+pkg install -y git bash curl iproute2 gh
+gh auth login
+gh repo clone King-pe/termux-guardian "$HOME/termux-guardian"
+cd "$HOME/termux-guardian"
+bash termuxguardian.sh
+```
+
+If the repository becomes public, the simpler flow is:
+
 ```bash
 pkg update
 pkg install -y git bash curl iproute2
-cd "$HOME"
-git clone https://github.com/King-pe/termux-guardian.git
-cd termux-guardian
-chmod +x termuxguardian.sh
-./termuxguardian.sh
+curl -fsSL https://raw.githubusercontent.com/King-pe/termux-guardian/main/install.sh | bash
 ```
 
-If the repository owner changes the GitHub path, replace the clone URL with the official URL shown on the companion site. Review every command before running it.
+The installer checks GitHub before cloning and stops with one clear message. It never continues to `cd`, `chmod`, or run a missing file after a failed clone. Review every command before running it.
+
+### Troubleshooting a GitHub timeout
+
+Run this check first:
+
+```bash
+curl -I --connect-timeout 10 https://github.com
+```
+
+If it times out, switch networks or retry later; Termux mirrors working does not prove that GitHub is reachable from the current network. If GitHub responds but cloning says access is denied, authenticate with `gh auth login` or ask the repository owner for access. The follow-up errors `cd: termux-guardian: No such file or directory`, `chmod: cannot access`, and `./termuxguardian.sh: No such file` are only consequences of the clone failing.
 
 ## Command reference
 
