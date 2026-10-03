@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Termux Guardian — defensive mobile security tools with a transparent safety boundary.">
+  <title>Termux Guardian · Defensive command center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Termux Guardian home">
+      <span class="brand-mark" aria-hidden="true"><span>&gt;</span><span>_</span></span>
+      <span><strong>TERMUX</strong><em>GUARDIAN</em></span>
+    </a>
+    <div class="topbar-meta"><span class="status-dot"></span><span>DEFENSIVE MODE</span><span class="divider"></span><span>OWNER / MrCodex1Tz</span></div>
+    <a class="github-link" href="https://github.com/King-pe/termux-guardian" target="_blank" rel="noreferrer">View repository <span>↗</span></a>
+  </header>
+
+  <main id="top" class="shell">
+    <aside class="rail" aria-label="Page navigation">
+      <div class="rail-label">SYSTEM MAP</div>
+      <nav>
+        <a class="rail-link active" href="#overview"><span>01</span>Overview</a>
+        <a class="rail-link" href="#install"><span>02</span>Deploy</a>
+        <a class="rail-link" href="#commands"><span>03</span>Commands</a>
+        <a class="rail-link" href="#governance"><span>04</span>Governance</a>
+      </nav>
+      <div class="rail-note"><span class="micro-label">BOUNDARY</span><p>No credential extraction.<br>No stealth. No guesswork.</p></div>
+    </aside>
+
+    <section class="content">
+      <section id="overview" class="hero section-anchor">
+        <div class="eyebrow"><span class="pulse"></span> MOBILE SECURITY / SAFE TELEMETRY / 0.1.0</div>
+        <h1>See the signal<br><span>before you touch</span><br>the system.</h1>
+        <p class="hero-copy">A focused Termux toolkit for people who want clearer device health, safer network diagnostics, and recovery guidance that respects the line between visibility and access.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#install">Deploy safely <span>↓</span></a>
+          <a class="button ghost" href="#commands">Read commands <span>→</span></a>
+        </div>
+        <div class="hero-signals">
+          <div><span class="micro-label">CURRENT POSTURE</span><strong>READ-ONLY FIRST</strong></div>
+          <div><span class="micro-label">SUPPORTED SHELL</span><strong>TERMUX / BASH</strong></div>
+          <div><span class="micro-label">SAFE BY DESIGN</span><strong>NO SECRETS TOUCHED</strong></div>
+        </div>
+      </section>
+
+      <section class="metrics section-anchor" aria-label="Repository activity">
+        <div class="section-kicker"><span>REPOSITORY PULSE</span><span class="line"></span><span id="metrics-status">CHECKING PUBLIC DATA…</span></div>
+        <div class="metric-strip">
+          <article class="metric-card"><span class="metric-icon">⑂</span><span class="micro-label">FORKS</span><strong id="forks">—</strong><small>public API</small></article>
+          <article class="metric-card"><span class="metric-icon">★</span><span class="micro-label">STARS</span><strong id="stars">—</strong><small>public API</small></article>
+          <article class="metric-card"><span class="metric-icon">◉</span><span class="micro-label">VISITORS</span><strong id="visitors">N/A</strong><small>owner-only traffic</small></article>
+          <article class="metric-card wide"><span class="metric-icon">↻</span><span class="micro-label">LAST SIGNAL</span><strong id="updated">—</strong><small id="repo-name">King-pe / termux-guardian</small></article>
+        </div>
+        <p class="metrics-note">Visitor counts are not publicly exposed by GitHub for most repositories. Termux Guardian never invents metrics: use <strong>Insights → Traffic</strong> when you have owner access.</p>
+      </section>
+
+      <section class="split-panel section-anchor" id="install">
+        <div class="panel panel-command">
+          <div class="panel-heading"><div><span class="micro-label">01 / DEPLOYMENT</span><h2>Ready when<br><span>you are.</span></h2></div><span class="panel-index">A</span></div>
+          <p>Review the source, install only from the official repository, and verify the script before you run it.</p>
+          <div class="code-block"><button class="copy" data-copy="pkg update && pkg install -y git bash curl iproute2 && git clone https://github.com/King-pe/termux-guardian.git && cd termux-guardian && chmod +x termuxguardian.sh">COPY</button><code><span class="comment"># install + verify the official toolkit</span>
+<span class="prompt">$</span> pkg update
+<span class="prompt">$</span> pkg install -y git bash curl iproute2
+<span class="prompt">$</span> git clone https://github.com/King-pe/termux-guardian.git
+<span class="prompt">$</span> cd termux-guardian && chmod +x termuxguardian.sh</code></div>
+          <div class="check-list"><div><span>✓</span> No package upgrades run automatically</div><div><span>✓</span> No credentials requested</div><div><span>✓</span> Works without extra services</div></div>
+        </div>
+        <div class="panel panel-safety">
+          <div class="panel-heading"><div><span class="micro-label">02 / SAFETY POSTURE</span><h2>Secrecy is a<br><span>feature.</span></h2></div><span class="panel-index">B</span></div>
+          <div class="safety-callout"><span class="shield">◆</span><div><strong>Credential boundary active</strong><p>This toolkit does not read or display Wi‑Fi passwords, tokens, keys, cookies, or other secrets.</p></div></div>
+          <div class="safety-rows"><div><span class="micro-label">NETWORK</span><strong>Connectivity + DNS only</strong></div><div><span class="micro-label">RECOVERY</span><strong>Official paths only</strong></div><div><span class="micro-label">IMPACT</span><strong>Non-destructive checks</strong></div></div>
+          <a class="text-link" href="#governance">Read the boundary <span>→</span></a>
+        </div>
+      </section>
+
+      <section id="commands" class="commands section-anchor">
+        <div class="section-kicker"><span>COMMAND REFERENCE</span><span class="line"></span><span>READABLE BY DEFAULT</span></div>
+        <div class="command-intro"><div><h2>Useful signals.<br><span>Zero theatre.</span></h2></div><p>Every command says what it checks, what it changes, and what it intentionally refuses to touch.</p></div>
+        <div class="command-table" role="table" aria-label="Command reference">
+          <div class="command-row head" role="row"><span>COMMAND</span><span>FUNCTION</span><span>IMPACT</span><span></span></div>
+          <div class="command-row" role="row"><code>./termuxguardian.sh check</code><span>Environment, architecture, storage, package manager</span><b class="safe">READ ONLY</b><button class="copy-icon" data-copy="./termuxguardian.sh check" aria-label="Copy environment check command">⧉</button></div>
+          <div class="command-row" role="row"><code>./termuxguardian.sh network</code><span>Connectivity, DNS, interface names, Android metadata</span><b class="safe">READ ONLY</b><button class="copy-icon" data-copy="./termuxguardian.sh network" aria-label="Copy network diagnostics command">⧉</button></div>
+          <div class="command-row" role="row"><code>./termuxguardian.sh storage</code><span>Home usage and package index readability</span><b class="safe">READ ONLY</b><button class="copy-icon" data-copy="./termuxguardian.sh storage" aria-label="Copy storage health command">⧉</button></div>
+          <div class="command-row" role="row"><code>./termuxguardian.sh recovery</code><span>Official recovery routes for forgotten access</span><b class="safe">GUIDANCE</b><button class="copy-icon" data-copy="./termuxguardian.sh recovery" aria-label="Copy recovery guidance command">⧉</button></div>
+        </div>
+      </section>
+
+      <section id="governance" class="governance section-anchor">
+        <div class="governance-main"><div class="section-kicker"><span>GOVERNANCE / PROVENANCE</span><span class="line"></span><span>MAINTAINER CONTROL</span></div><h2>Protect the upstream.<br><span>Respect the fork.</span></h2><p>MrCodex1Tz is the project owner and maintainer. CODEOWNERS and protected-branch rules keep official changes behind owner review. A fork is independently controlled by its fork owner; no upstream project can technically lock another person's fork or transfer.</p><div class="governance-tags"><span>OWNER REVIEW</span><span>ATTRIBUTION REQUIRED</span><span>AUTHORIZED USE ONLY</span></div></div>
+        <div class="governance-side"><div class="owner-card"><span class="avatar">M1</span><div><span class="micro-label">OFFICIAL MAINTAINER</span><strong>MrCodex1Tz</strong><small>Security-minded by design.</small></div><span class="verified">✓</span></div><div class="policy-card"><span class="micro-label">CONTRIBUTION POLICY</span><p>Improve visibility, documentation, accessibility, and tests. Never add password extraction, stealth, bypasses, destructive cleanup, or unauthorized access features.</p><a class="text-link" href="https://github.com/King-pe/termux-guardian/blob/main/CONTRIBUTING.md" target="_blank" rel="noreferrer">Open contribution rules <span>↗</span></a></div></div>
+      </section>
+
+      <footer><span>TERMUX GUARDIAN / 2026</span><span>BUILT FOR CLARITY, NOT CREDENTIALS</span><span>MrCodex1Tz</span></footer>
+    </section>
+  </main>
+  <div class="toast" role="status" aria-live="polite">Copied to clipboard</div>
+  <script src="app.js"></script>
+</body>
+</html>

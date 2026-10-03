@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TOOL="$ROOT/termuxguardian.sh"
+
+fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
+pass() { printf 'PASS: %s\n' "$1"; }
+
+[[ -x "$TOOL" ]] || fail "toolkit is executable"
+help_out="$(bash "$TOOL" help)"
+grep -q "Termux Guardian" <<<"$help_out" || fail "help includes product name"
+grep -q "never extracts" <<<"$help_out" || fail "help includes credential boundary"
+pass "help output"
+
+check_out="$(bash "$TOOL" check)"
+grep -q "Environment check" <<<"$check_out" || fail "check subcommand"
+pass "environment check"
+
+network_out="$(bash "$TOOL" network)"
+grep -q "Network diagnostics" <<<"$network_out" || fail "network subcommand"
+grep -q "never read or displayed" <<<"$network_out" || fail "network safety message"
+pass "network diagnostics"
+
+storage_out="$(bash "$TOOL" storage)"
+grep -q "Storage and package health" <<<"$storage_out" || fail "storage subcommand"
+pass "storage health"
+
+recovery_out="$(bash "$TOOL" recovery)"
+grep -q "Authorized recovery guidance" <<<"$recovery_out" || fail "recovery subcommand"
+pass "recovery guidance"
+
+if grep -Eiq 'cat .*wpa|grep .*psk|password[[:space:]]*=' "$TOOL"; then
+  fail "toolkit contains a credential extraction pattern"
+fi
+pass "credential extraction guard"
+
+printf 'All Termux Guardian smoke tests passed.\n'
