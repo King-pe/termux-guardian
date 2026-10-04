@@ -14,9 +14,18 @@ Use this project only on devices, networks, and accounts you own or are explicit
 
 ## Install in Termux
 
-The official repository is currently **private**. Anonymous `git clone` will not work until the owner makes the repository public or grants your GitHub account access. A GitHub timeout such as `Failed to connect to github.com:443` is a network-path problem; it happens before this toolkit runs.
+The normal public flow does **not** require `gh auth login`. It clones only the official origin, verifies the origin, and then starts the numbered menu. The repository is currently **private**, however, so anonymous cloning cannot work until the owner makes it public or grants your GitHub account access.
 
-For an authorized GitHub account, install the GitHub CLI and authenticate first:
+When the repository is public, use this numbered flow:
+
+```bash
+pkg update
+1. pkg update
+2. pkg install -y git bash curl iproute2
+3. curl -fsSL https://raw.githubusercontent.com/King-pe/termux-guardian/main/install.sh | bash
+```
+
+For the current private repository, an authorized owner or collaborator must authenticate before cloning:
 
 ```bash
 pkg update
@@ -27,15 +36,7 @@ cd "$HOME/termux-guardian"
 bash termuxguardian.sh
 ```
 
-If the repository becomes public, the simpler flow is:
-
-```bash
-pkg update
-pkg install -y git bash curl iproute2
-curl -fsSL https://raw.githubusercontent.com/King-pe/termux-guardian/main/install.sh | bash
-```
-
-The installer checks GitHub before cloning and stops with one clear message. It never continues to `cd`, `chmod`, or run a missing file after a failed clone. Review every command before running it.
+The installer prints blue numbered steps, red failure messages, checks GitHub before cloning, verifies that `origin` is exactly `King-pe/termux-guardian`, and stops with one clear message. It never continues to `cd`, `chmod`, or run a missing file after a failed clone. Review every command before running it.
 
 ### Troubleshooting a GitHub timeout
 
@@ -71,9 +72,9 @@ The companion dashboard can show public GitHub metadata such as forks, stars, wa
 
 ## Ownership and forks
 
-MrCodex1Tz is the project owner and maintainer. `.github/CODEOWNERS` requests owner review for changes to the toolkit, safety policy, documentation, and governance files. The default branch should also be protected in GitHub repository settings with required pull requests and owner approval.
+MrCodex1Tz is the project owner and maintainer. `.github/CODEOWNERS` requests owner review for changes to the toolkit, safety policy, documentation, and governance files. The CLI also refuses to run when `origin` is not exactly `github.com/King-pe/termux-guardian`.
 
-A GitHub fork is a separate repository controlled by its fork owner. No upstream project can technically prevent a fork owner from changing their own fork or transferring ownership of it. What this repository can enforce is upstream review, attribution, licensing, and clear provenance.
+A GitHub fork is a separate repository controlled by its fork owner. No upstream project can technically prevent a fork owner from changing their own fork, changing its organization, or transferring it. What this project enforces is that the official executable runs only from the official origin; forks can still be inspected or developed separately, but they are not treated as the official runtime source.
 
 ## Development
 

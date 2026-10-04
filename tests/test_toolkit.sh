@@ -7,25 +7,25 @@ fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
 pass() { printf 'PASS: %s\n' "$1"; }
 
 [[ -x "$TOOL" ]] || fail "toolkit is executable"
-help_out="$(bash "$TOOL" help)"
+help_out="$(TERMUX_GUARDIAN_TEST_MODE=1 bash "$TOOL" help)"
 grep -q "Termux Guardian" <<<"$help_out" || fail "help includes product name"
 grep -q "never extracts" <<<"$help_out" || fail "help includes credential boundary"
 pass "help output"
 
-check_out="$(bash "$TOOL" check)"
+check_out="$(TERMUX_GUARDIAN_TEST_MODE=1 bash "$TOOL" check)"
 grep -q "Environment check" <<<"$check_out" || fail "check subcommand"
 pass "environment check"
 
-network_out="$(bash "$TOOL" network)"
+network_out="$(TERMUX_GUARDIAN_TEST_MODE=1 bash "$TOOL" network)"
 grep -q "Network diagnostics" <<<"$network_out" || fail "network subcommand"
 grep -q "never read or displayed" <<<"$network_out" || fail "network safety message"
 pass "network diagnostics"
 
-storage_out="$(bash "$TOOL" storage)"
+storage_out="$(TERMUX_GUARDIAN_TEST_MODE=1 bash "$TOOL" storage)"
 grep -q "Storage and package health" <<<"$storage_out" || fail "storage subcommand"
 pass "storage health"
 
-recovery_out="$(bash "$TOOL" recovery)"
+recovery_out="$(TERMUX_GUARDIAN_TEST_MODE=1 bash "$TOOL" recovery)"
 grep -q "Authorized recovery guidance" <<<"$recovery_out" || fail "recovery subcommand"
 pass "recovery guidance"
 

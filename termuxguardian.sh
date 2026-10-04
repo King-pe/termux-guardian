@@ -1,15 +1,49 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-VERSION="0.1.0"
+VERSION="0.1.1"
 APP_NAME="Termux Guardian"
+OFFICIAL_REPO="King-pe/termux-guardian"
 
-cyan='\033[38;5;51m'; green='\033[38;5;82m'; amber='\033[38;5;214m'; red='\033[38;5;203m'; dim='\033[2m'; reset='\033[0m'
+blue='\033[1;34m'; cyan='\033[38;5;51m'; green='\033[38;5;82m'; amber='\033[38;5;214m'; red='\033[1;31m'; dim='\033[2m'; reset='\033[0m'
 
 has_cmd() { command -v "$1" >/dev/null 2>&1; }
 line() { printf '%b\n' "${dim}────────────────────────────────────────────────────────────${reset}"; }
+normalize_repo() {
+  local value="${1%/}"
+  value="${value%.git}"
+  value="${value#https://github.com/}"
+  value="${value#http://github.com/}"
+  value="${value#git@github.com:}"
+  value="${value#ssh://git@github.com/}"
+  printf '%s' "$value"
+}
+official_repository_guard() {
+  [[ "${TERMUX_GUARDIAN_TEST_MODE:-0}" == "1" ]] && return 0
+  local root origin normalized
+  root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  [[ -n "$root" ]] || { printf '%b\n' "${red}STOP: run this tool from the official Git repository.${reset}" >&2; return 1; }
+  origin="$(git -C "$root" config --get remote.origin.url 2>/dev/null || true)"
+  normalized="$(normalize_repo "$origin")"
+  if [[ "$normalized" != "$OFFICIAL_REPO" ]]; then
+    printf '%b\n' "${red}STOP: unofficial repository detected.${reset}" >&2
+    printf '%b\n' "${red}Expected: github.com/${OFFICIAL_REPO}${reset}" >&2
+    printf '%b\n' "${dim}Forks may change their own code, but this executable only runs from the official origin.${reset}" >&2
+    return 1
+  fi
+}
+banner() {
+  printf '%b\n' "${blue} ██████╗ ██╗   ██╗ █████╗ ██████╗ ██████╗ ██╗ █████╗ ███╗   ██╗${reset}"
+  printf '%b\n' "${blue}██╔════╝ ██║   ██║██╔══██╗██╔══██╗██╔══██╗██║██╔══██╗████╗  ██║${reset}"
+  printf '%b\n' "${blue}██║  ███╗██║   ██║███████║██████╔╝██║  ██║██║███████║██╔██╗ ██║${reset}"
+  printf '%b\n' "${blue}██║   ██║██║   ██║██╔══██║██╔══██╗██║  ██║██║██╔══██║██║╚██╗██║${reset}"
+  printf '%b\n' "${blue}╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝██║██║  ██║██║ ╚████║${reset}"
+  printf '%b\n' "${blue} ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝${reset}"
+}
 header() {
   clear 2>/dev/null || true
+  banner
+  printf '%b\n' "${red}OFFICIAL ORIGIN ONLY · MrCodex1Tz${reset}"
   printf '%b\n' "${cyan}╭────────────────────────────────────────────────────────────╮${reset}"
   printf '%b\n' "${cyan}│${reset}  ${green}▸_${reset} ${APP_NAME} ${dim}v${VERSION}${reset}                         ${cyan}│${reset}"
   printf '%b\n' "${cyan}│${reset}  ${dim}See the signal before you touch the system.${reset}          ${cyan}│${reset}"
@@ -32,6 +66,9 @@ Usage:
 Safety boundary:
   This tool never extracts, reveals, stores, or displays Wi-Fi passwords,
   tokens, keys, or other credentials. It only reads safe system metadata.
+
+Repository policy:
+  This executable runs only when git origin is github.com/King-pe/termux-guardian.
 EOF
 }
 
@@ -136,25 +173,26 @@ run_command() {
 menu() {
   while true; do
     header
-    printf '%b\n' "${dim}SAFE MODE · READ-ONLY FIRST · OWNER: MrCodex1Tz${reset}\n"
-    printf '%b\n' "  ${cyan}1${reset}  Environment check"
-    printf '%b\n' "  ${cyan}2${reset}  Network diagnostics"
-    printf '%b\n' "  ${cyan}3${reset}  Storage & package health"
-    printf '%b\n' "  ${cyan}4${reset}  Non-destructive update guidance"
-    printf '%b\n' "  ${cyan}5${reset}  Account / network recovery guidance"
-    printf '%b\n' "  ${cyan}h${reset}  Command help"
-    printf '%b\n' "  ${cyan}q${reset}  Exit"
+    printf '%b\n' "${dim}NUMBERED STEPS · SAFE MODE · READ-ONLY FIRST${reset}\n"
+    printf '%b\n' "  ${blue}[01]${reset}  Environment check"
+    printf '%b\n' "  ${blue}[02]${reset}  Network diagnostics"
+    printf '%b\n' "  ${blue}[03]${reset}  Storage & package health"
+    printf '%b\n' "  ${blue}[04]${reset}  Non-destructive update guidance"
+    printf '%b\n' "  ${blue}[05]${reset}  Account / network recovery guidance"
+    printf '%b\n' "  ${blue}[H ]${reset}  Command help"
+    printf '%b\n' "  ${red}[Q ]${reset}  Exit"
     line
     read -r -p '  Select an action: ' choice || exit 0
     printf '\n'
     case "$choice" in
-      1) check_environment ;; 2) network_diagnostics ;; 3) storage_health ;;
-      4) updates_guidance ;; 5) recovery_guidance ;; h|H) usage ;;
+      1|01) check_environment ;; 2|02) network_diagnostics ;; 3|03) storage_health ;;
+      4|04) updates_guidance ;; 5|05) recovery_guidance ;; h|H) usage ;;
       q|Q) printf 'Stay authorized. Stay safe.\n'; exit 0 ;;
-      *) printf '%bPlease choose 1–5, h, or q.%b\n' "$amber" "$reset" ;;
+      *) printf '%bPlease choose 01–05, H, or Q.%b\n' "$amber" "$reset" ;;
     esac
     printf '\n'; read -r -p '  Press Enter to return to the menu...' _ || exit 0
   done
 }
 
+official_repository_guard || exit 1
 if [[ $# -eq 0 ]]; then menu; else run_command "$1"; fi
