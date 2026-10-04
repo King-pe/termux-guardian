@@ -18,12 +18,13 @@ Use this project only on devices, networks, and accounts you own or are explicit
 
 The normal public flow does **not** require `gh auth login`. It clones only the official origin, verifies the origin, and then starts the numbered menu. The repository is currently **private**, however, so anonymous cloning cannot work until the owner makes it public or grants your GitHub account access.
 
-When the repository is public, use this numbered flow:
+When the repository is public, run these commands exactly in order. Do not run `./termuxguardian.sh` from `~`; first enter `~/termux-guardian`.
 
 ```bash
-1. pkg update
-2. pkg install -y git bash curl iproute2
-3. curl -fsSL https://raw.githubusercontent.com/King-pe/termux-guardian/main/install.sh | bash
+pkg update
+pkg install -y git bash curl iproute2
+cd "$HOME"
+curl -fsSL https://raw.githubusercontent.com/King-pe/termux-guardian/main/install.sh | bash
 ```
 
 For the current private repository, an authorized owner or collaborator must authenticate before cloning:
@@ -34,7 +35,8 @@ pkg install -y git bash curl iproute2 gh
 gh auth login
 gh repo clone King-pe/termux-guardian "$HOME/termux-guardian"
 cd "$HOME/termux-guardian"
-bash termuxguardian.sh
+chmod +x termuxguardian.sh
+bash ./termuxguardian.sh
 ```
 
 The installer prints blue numbered steps, red failure messages, checks GitHub before cloning, verifies that `origin` is exactly `King-pe/termux-guardian`, and stops with one clear message. It never continues to `cd`, `chmod`, or run a missing file after a failed clone. Review every command before running it.
@@ -48,6 +50,17 @@ curl -I --connect-timeout 10 https://github.com
 ```
 
 If it times out, switch networks or retry later; Termux mirrors working does not prove that GitHub is reachable from the current network. If GitHub responds but cloning says access is denied, authenticate with `gh auth login` or ask the repository owner for access. The follow-up errors `cd: termux-guardian: No such file or directory`, `chmod: cannot access`, and `./termuxguardian.sh: No such file` are only consequences of the clone failing.
+
+### If `dnsutils` installed but the toolkit is missing
+
+`pkg install dnsutils` only installs the DNS utility; it does not download Termux Guardian. If your prompt is `~ $`, enter the repository first:
+
+```bash
+cd "$HOME/termux-guardian"
+bash ./termuxguardian.sh dns
+```
+
+If that directory does not exist, repeat the installation block above. Do not run `bash termuxguardian.sh` from `~`.
 
 ## Command reference
 
@@ -86,6 +99,10 @@ The companion dashboard now shows live public GitHub repository signals: forks, 
 | Forks | GitHub repository API | Loaded on the dashboard when available |
 | Stars | GitHub repository API | Loaded on the dashboard when available |
 | Visitors | GitHub Insights → Traffic | Owner-only; not faked |
+
+## User notifications and privacy
+
+The CLI currently does **not** send silent connection notifications or collect device identity, precise location, IP addresses, passwords, or tokens. The dashboard displays public GitHub repository signals only. A future new-user notification feature must use clear opt-in anonymous telemetry, a backend notification channel, a retention policy, and an easy opt-out; it must never be added as hidden tracking.
 
 ## DNS and My Location Maps
 
