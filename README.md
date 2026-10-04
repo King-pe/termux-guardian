@@ -2,9 +2,11 @@
 
 > A safer command center for Android defenders who work in Termux.
 
-**Owner:** MrCodex1Tz  ·  **Version:** 0.1.0  ·  **Mode:** defensive and non-destructive
+**Owner:** MrCodex1Tz  ·  **Version:** 0.2.0  ·  **Mode:** defensive and non-destructive
 
 Termux Guardian is an English-language toolkit for visibility, safe environment checks, network diagnostics, storage health, update guidance, and authorized recovery guidance. It is designed to help people understand their own devices without crossing into credential access or destructive behavior.
+
+![Termux Guardian numbered menu](docs/assets/termux-guardian-menu.png)
 
 ## Safety comes first
 
@@ -19,7 +21,6 @@ The normal public flow does **not** require `gh auth login`. It clones only the 
 When the repository is public, use this numbered flow:
 
 ```bash
-pkg update
 1. pkg update
 2. pkg install -y git bash curl iproute2
 3. curl -fsSL https://raw.githubusercontent.com/King-pe/termux-guardian/main/install.sh | bash
@@ -58,7 +59,21 @@ If it times out, switch networks or retry later; Termux mirrors working does not
 | `./termuxguardian.sh storage` | Checks home usage and package index readability | No |
 | `./termuxguardian.sh updates` | Prints reviewed, manual update steps | No |
 | `./termuxguardian.sh recovery` | Prints official recovery paths for forgotten access | No |
+| `./termuxguardian.sh scan quick` | Scans common download locations and the home directory for malware-risk patterns | No |
+| `./termuxguardian.sh scan full` | Performs a deeper local scan; uses ClamAV when installed | No |
+| `./termuxguardian.sh quarantine` | Reviews findings and moves confirmed files into private quarantine | Moves only after confirmation |
+| `./termuxguardian.sh link <URL>` | Analyzes a URL locally without opening or downloading it | No |
 | `./termuxguardian.sh help` | Prints CLI help and safety policy | No |
+
+## Malware scanning and cleaning
+
+Choose **[06] Quick malware-risk scan** for a fast check of common download locations, or **[07] Full malware-risk scan** for a deeper home-directory scan. If `clamscan` is installed, the tool uses it; otherwise it applies conservative local heuristics to suspicious executable scripts and packages. It never executes scanned files.
+
+If findings appear, choose **[08] Review / quarantine findings**. The tool prints every finding and requires you to type `QUARANTINE` before moving anything. Quarantine is reversible storage under `~/.termux-guardian/quarantine`; it is not silent deletion. A heuristic result is not proof of infection, so review files carefully and use a trusted antivirus engine for confirmation.
+
+## Link safety analysis
+
+Choose **[09] Scan a link** or run `./termuxguardian.sh link "https://example.com"`. The analyzer does not open, resolve, download, or submit the URL. It flags patterns such as raw IP hosts, punycode domains, URL shorteners, embedded credentials, and credential-themed wording. A green **SAFE LINK** result means no obvious local warning pattern was found, not a guarantee. A red **DANGER / PHISHING RISK** result means **do not open this link**.
 
 ## Repository activity
 

@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-VERSION="0.1.1"
+VERSION="0.2.0"
 APP_NAME="Termux Guardian"
 OFFICIAL_REPO="King-pe/termux-guardian"
+QUARANTINE_DIR="${HOME:-.}/.termux-guardian/quarantine"
 
 blue='\033[1;34m'; cyan='\033[38;5;51m'; green='\033[38;5;82m'; amber='\033[38;5;214m'; red='\033[1;31m'; dim='\033[2m'; reset='\033[0m'
 
@@ -61,6 +62,10 @@ Usage:
   ./termuxguardian.sh storage         Inspect storage and package health
   ./termuxguardian.sh updates         Show non-destructive update guidance
   ./termuxguardian.sh recovery        Show authorized account/network recovery guidance
+  ./termuxguardian.sh scan quick      Run a fast malware-risk scan
+  ./termuxguardian.sh scan full       Run a deeper malware-risk scan
+  ./termuxguardian.sh quarantine      Review and quarantine scan findings
+  ./termuxguardian.sh link <URL>      Analyze a link without opening it
   ./termuxguardian.sh help            Show this help
 
 Safety boundary:
@@ -69,6 +74,10 @@ Safety boundary:
 
 Repository policy:
   This executable runs only when git origin is github.com/King-pe/termux-guardian.
+
+Malware policy:
+  Scans are defensive and local. Findings are quarantined only after confirmation;
+  files are never silently deleted. Link analysis never opens or downloads a URL.
 EOF
 }
 
@@ -129,6 +138,87 @@ storage_health() {
   printf '\n%bRead-only inspection complete. No package upgrades were started.%b\n' "$dim" "$reset"
 }
 
+scan_file_risk() {
+  local path="$1" lower
+  lower="${path,,}"
+  case "$lower" in
+    *.apk|*.dex|*.jar|*.so|*.sh|*.py|*.js|*.php|*.elf)
+      if grep -aEiq 'base64[[:space:]]+-d|curl[[:space:]].*\|[[:space:]]*(sh|bash)|wget[[:space:]].*\|[[:space:]]*(sh|bash)|rm[[:space:]]+-rf[[:space:]]+/' "$path" 2>/dev/null; then
+        printf '%s\t%s\n' "$path" 'suspicious executable pattern'
+      fi
+      ;;
+  esac
+}
+
+malware_scan() {
+  local mode="${1:-quick}" roots=() report count=0 file root limit
+  [[ "$mode" == "full" || "$mode" == "quick" ]] || { printf '%bUnknown scan mode. Use quick or full.%b\n' "$amber" "$reset"; return 2; }
+  report="${HOME:-.}/.termux-guardian/scan-findings.tsv"
+  mkdir -p "$(dirname "$report")"
+  : > "$report"
+  printf '%b\n' "${green}${mode^} malware-risk scan${reset}"
+  line
+  printf '%bThis scan reads local files only; it does not delete or execute anything.%b\n' "$dim" "$reset"
+  if has_cmd clamscan; then printf 'Engine:          ClamAV detected\n'; else printf 'Engine:          heuristic checks (ClamAV not installed)\n'; fi
+  if [[ "$mode" == "full" ]]; then roots=("${HOME:-.}"); limit=20000; else roots=("${HOME:-.}/downloads" "${HOME:-.}/storage/downloads" "${HOME:-.}"); limit=3000; fi
+  for root in "${roots[@]}"; do
+    [[ -d "$root" ]] || continue
+    while IFS= read -r -d '' file; do
+      [[ "$file" == "$report" ]] && continue
+      if has_cmd clamscan && clamscan --no-summary --infected "$file" 2>/dev/null | grep -q 'FOUND$'; then
+        printf '%s\t%s\n' "$file" 'ClamAV detection' >> "$report"
+      else
+        scan_file_risk "$file" >> "$report" || true
+      fi
+    done < <(find "$root" -type f -size -25M -print0 2>/dev/null | head -z -n "$limit")
+  done
+  count="$(wc -l < "$report" | tr -d ' ')"
+  if [[ "$count" == "0" ]]; then
+    printf '%bRESULT: SAFE — no suspicious findings in the scanned files.%b\n' "$green" "$reset"
+  else
+    printf '%bRESULT: DANGER REVIEW — %s finding(s) saved to:%b %s\n' "$red" "$count" "$reset" "$report"
+    sed -n '1,20p' "$report"
+    printf '%bRun ./termuxguardian.sh quarantine to review before moving files.%b\n' "$amber" "$reset"
+  fi
+}
+
+quarantine_findings() {
+  local report="${HOME:-.}/.termux-guardian/scan-findings.tsv" answer path reason target
+  [[ -s "$report" ]] || { printf '%bNo scan findings are waiting for review.%b\n' "$green" "$reset"; return 0; }
+  printf '%bPending findings:%b\n' "$red" "$reset"; cat "$report"
+  printf '\nThis moves files into a private quarantine folder; it does not delete them.\n'
+  read -r -p 'Type QUARANTINE to continue: ' answer
+  [[ "$answer" == "QUARANTINE" ]] || { printf 'No files were moved.\n'; return 0; }
+  mkdir -p "$QUARANTINE_DIR"; chmod 700 "$QUARANTINE_DIR"
+  while IFS=$'\t' read -r path reason; do
+    [[ -f "$path" ]] || continue
+    target="$QUARANTINE_DIR/$(basename "$path").$(date +%s).quarantined"
+    mv -- "$path" "$target"
+    printf '%bQUARANTINED%b %s → %s (%s)\n' "$red" "$reset" "$path" "$target" "$reason"
+  done < "$report"
+  : > "$report"
+}
+
+link_scan() {
+  local url="${1:-}" host="" risk=0 reasons=()
+  [[ -n "$url" ]] || { printf 'Usage: ./termuxguardian.sh link <URL>\n'; return 2; }
+  printf '%bLink safety analysis%b\n' "$green" "$reset"; line
+  printf '%bThis check does not open, resolve, download, or submit the link.%b\n' "$dim" "$reset"
+  [[ "$url" =~ ^https?:// ]] || { risk=1; reasons+=("missing HTTP/HTTPS scheme"); }
+  host="${url#*://}"; host="${host%%/*}"; host="${host%%\?*}"; host="${host%%#*}"
+  [[ "$host" == *"@"* ]] && { risk=1; reasons+=("embedded username or redirect pattern"); }
+  [[ "$host" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(:[0-9]+)?$ ]] && { risk=1; reasons+=("raw IP address host"); }
+  [[ "$host" == xn--* || "$host" == *".xn--"* ]] && { risk=1; reasons+=("punycode domain"); }
+  [[ "$host" =~ (bit\.ly|tinyurl\.com|t\.co|goo\.gl|is\.gd|cutt\.ly)$ ]] && { risk=1; reasons+=("URL shortener hides destination"); }
+  [[ "$url" =~ (login|verify|wallet|reset|security|password|account) ]] && { risk=1; reasons+=("credential-themed wording"); }
+  if [[ "$risk" == "0" ]]; then
+    printf '%bSAFE LINK%b — no obvious local warning pattern detected. Still verify the domain before opening.\n' "$green" "$reset"
+  else
+    printf '%bDANGER / PHISHING RISK%b — do not open this link.\n' "$red" "$reset"
+    printf 'Reasons: %s\n' "${reasons[*]}"
+  fi
+}
+
 updates_guidance() {
   printf '%b\n' "${green}Non-destructive update guidance${reset}"
   line
@@ -165,7 +255,8 @@ EOF
 run_command() {
   case "${1:-help}" in
     check) check_environment ;; network) network_diagnostics ;; storage) storage_health ;;
-    updates) updates_guidance ;; recovery) recovery_guidance ;; help|-h|--help) usage ;;
+    updates) updates_guidance ;; recovery) recovery_guidance ;; scan) malware_scan "${2:-quick}" ;;
+    quarantine) quarantine_findings ;; link) link_scan "${2:-}" ;; help|-h|--help) usage ;;
     *) printf '%bUnknown command:%b %s\n\n' "$amber" "$reset" "$1"; usage; return 2 ;;
   esac
 }
@@ -179,6 +270,10 @@ menu() {
     printf '%b\n' "  ${blue}[03]${reset}  Storage & package health"
     printf '%b\n' "  ${blue}[04]${reset}  Non-destructive update guidance"
     printf '%b\n' "  ${blue}[05]${reset}  Account / network recovery guidance"
+    printf '%b\n' "  ${blue}[06]${reset}  Quick malware-risk scan"
+    printf '%b\n' "  ${blue}[07]${reset}  Full malware-risk scan"
+    printf '%b\n' "  ${blue}[08]${reset}  Review / quarantine findings"
+    printf '%b\n' "  ${blue}[09]${reset}  Scan a link (never opens it)"
     printf '%b\n' "  ${blue}[H ]${reset}  Command help"
     printf '%b\n' "  ${red}[Q ]${reset}  Exit"
     line
@@ -186,13 +281,16 @@ menu() {
     printf '\n'
     case "$choice" in
       1|01) check_environment ;; 2|02) network_diagnostics ;; 3|03) storage_health ;;
-      4|04) updates_guidance ;; 5|05) recovery_guidance ;; h|H) usage ;;
+      4|04) updates_guidance ;; 5|05) recovery_guidance ;; 6|06) malware_scan quick ;;
+      7|07) malware_scan full ;; 8|08) quarantine_findings ;; 9|09)
+        read -r -p '  Paste URL to analyze: ' url; link_scan "$url" ;;
+      h|H) usage ;;
       q|Q) printf 'Stay authorized. Stay safe.\n'; exit 0 ;;
-      *) printf '%bPlease choose 01–05, H, or Q.%b\n' "$amber" "$reset" ;;
+      *) printf '%bPlease choose 01–09, H, or Q.%b\n' "$amber" "$reset" ;;
     esac
     printf '\n'; read -r -p '  Press Enter to return to the menu...' _ || exit 0
   done
 }
 
 official_repository_guard || exit 1
-if [[ $# -eq 0 ]]; then menu; else run_command "$1"; fi
+if [[ $# -eq 0 ]]; then menu; else run_command "$@"; fi

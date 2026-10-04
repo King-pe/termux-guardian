@@ -29,6 +29,17 @@ recovery_out="$(TERMUX_GUARDIAN_TEST_MODE=1 bash "$TOOL" recovery)"
 grep -q "Authorized recovery guidance" <<<"$recovery_out" || fail "recovery subcommand"
 pass "recovery guidance"
 
+quick_out="$(TERMUX_GUARDIAN_TEST_MODE=1 bash "$TOOL" scan quick)"
+grep -q "Quick malware-risk scan" <<<"$quick_out" || fail "quick scan subcommand"
+grep -q "RESULT: SAFE" <<<"$quick_out" || fail "quick scan result"
+pass "quick malware scan"
+
+link_safe="$(TERMUX_GUARDIAN_TEST_MODE=1 bash "$TOOL" link https://example.com)"
+grep -q "SAFE LINK" <<<"$link_safe" || fail "safe link classification"
+link_bad="$(TERMUX_GUARDIAN_TEST_MODE=1 bash "$TOOL" link https://bit.ly/login-verify)"
+grep -q "DANGER / PHISHING RISK" <<<"$link_bad" || fail "danger link classification"
+pass "link safety analysis"
+
 if grep -Eiq 'cat .*wpa|grep .*psk|password[[:space:]]*=' "$TOOL"; then
   fail "toolkit contains a credential extraction pattern"
 fi
