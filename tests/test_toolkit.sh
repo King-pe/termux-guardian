@@ -21,6 +21,10 @@ grep -q "Network diagnostics" <<<"$network_out" || fail "network subcommand"
 grep -q "never read or displayed" <<<"$network_out" || fail "network safety message"
 pass "network diagnostics"
 
+dns_out="$(TERMUX_GUARDIAN_TEST_MODE=1 bash "$TOOL" dns)"
+grep -q "DNS resolver:" <<<"$dns_out" || fail "dns resolver command"
+pass "dns resolver diagnostics"
+
 storage_out="$(TERMUX_GUARDIAN_TEST_MODE=1 bash "$TOOL" storage)"
 grep -q "Storage and package health" <<<"$storage_out" || fail "storage subcommand"
 pass "storage health"

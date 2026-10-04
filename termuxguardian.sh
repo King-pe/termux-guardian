@@ -62,6 +62,8 @@ Usage:
   ./termuxguardian.sh storage         Inspect storage and package health
   ./termuxguardian.sh updates         Show non-destructive update guidance
   ./termuxguardian.sh recovery        Show authorized account/network recovery guidance
+  ./termuxguardian.sh dns             Diagnose DNS with system and fallback resolvers
+  ./termuxguardian.sh location        Show location and optionally open OpenStreetMap
   ./termuxguardian.sh scan quick      Run a fast malware-risk scan
   ./termuxguardian.sh scan full       Run a deeper malware-risk scan
   ./termuxguardian.sh quarantine      Review and quarantine scan findings
@@ -110,17 +112,53 @@ network_diagnostics() {
   else
     printf '%bnot confirmed%b\n' "$amber" "$reset"
   fi
-  printf 'DNS resolver:    '
-  if has_cmd getent && getent hosts example.com >/dev/null 2>&1; then
-    printf '%bworking%b\n' "$green" "$reset"
-  else
-    printf '%bnot confirmed%b\n' "$amber" "$reset"
-  fi
+  dns_diagnostics
   if has_cmd ip; then
     printf '\nInterfaces (names and state only):\n'
     ip -brief link 2>/dev/null | sed -n '1,12p'
   fi
   printf '\n%bCredential policy:%b Wi-Fi passwords and other secrets are never read or displayed.\n' "$red" "$reset"
+}
+
+dns_diagnostics() {
+  local dns1="${dns1:-}" resolver_ok=0
+  if has_cmd getprop; then dns1="$(getprop net.dns1 2>/dev/null || true)"; fi
+  printf 'DNS resolver:    '
+  if has_cmd getent && getent hosts example.com >/dev/null 2>&1; then
+    resolver_ok=1; printf '%bworking (system resolver)%b\n' "$green" "$reset"
+  elif has_cmd nslookup && nslookup -timeout=3 example.com 1.1.1.1 >/dev/null 2>&1; then
+    resolver_ok=1; printf '%bworking (fallback 1.1.1.1)%b\n' "$green" "$reset"
+  elif has_cmd dig && dig +time=3 +tries=1 @1.1.1.1 example.com >/dev/null 2>&1; then
+    resolver_ok=1; printf '%bworking (fallback 1.1.1.1)%b\n' "$green" "$reset"
+  else
+    printf '%bnot confirmed%b\n' "$amber" "$reset"
+  fi
+  [[ -n "$dns1" ]] && printf 'Android DNS:     %s\n' "$dns1"
+  if [[ "$resolver_ok" == "0" ]]; then
+    printf '%bDNS repair:%b pkg install -y dnsutils; then retry ./termuxguardian.sh dns\n' "$amber" "$reset"
+    printf '%bIf fallback works but system fails, check Android Private DNS or change network.%b\n' "$dim" "$reset"
+  fi
+}
+
+my_location() {
+  local payload lat lon map_url answer
+  printf '%bMy Location Maps%b\n' "$green" "$reset"; line
+  printf '%bLocation is read only from Termux:API and is not stored by this tool.%b\n' "$dim" "$reset"
+  if ! has_cmd termux-location; then
+    printf '%btermux-location is not installed.%b\n' "$amber" "$reset"
+    printf 'Install the Termux:API app from the same trusted source as Termux, then run: pkg install -y termux-api\n'
+    return 1
+  fi
+  payload="$(termux-location -p network -r once 2>/dev/null || true)"
+  lat="$(printf '%s' "$payload" | sed -n 's/.*"latitude"[[:space:]]*:[[:space:]]*\([-0-9.]*\).*/\1/p')"
+  lon="$(printf '%s' "$payload" | sed -n 's/.*"longitude"[[:space:]]*:[[:space:]]*\([-0-9.]*\).*/\1/p')"
+  [[ -n "$lat" && -n "$lon" ]] || { printf '%bLocation unavailable. Grant permission and enable device location.%b\n' "$amber" "$reset"; return 1; }
+  printf 'Coordinates:     %s, %s\n' "$lat" "$lon"
+  map_url="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=16/${lat}/${lon}"
+  printf 'Map:             %s\n' "$map_url"
+  read -r -p 'Type OPEN to launch the map in your browser: ' answer
+  [[ "$answer" == "OPEN" ]] || { printf 'Map was not opened.\n'; return 0; }
+  if has_cmd termux-open-url; then termux-open-url "$map_url"; elif has_cmd am; then am start -a android.intent.action.VIEW -d "$map_url" >/dev/null; else printf 'Open the Map URL above manually.\n'; fi
 }
 
 storage_health() {
@@ -254,8 +292,8 @@ EOF
 
 run_command() {
   case "${1:-help}" in
-    check) check_environment ;; network) network_diagnostics ;; storage) storage_health ;;
-    updates) updates_guidance ;; recovery) recovery_guidance ;; scan) malware_scan "${2:-quick}" ;;
+    check) check_environment ;; network) network_diagnostics ;; dns) dns_diagnostics ;; storage) storage_health ;;
+    updates) updates_guidance ;; recovery) recovery_guidance ;; location) my_location ;; scan) malware_scan "${2:-quick}" ;;
     quarantine) quarantine_findings ;; link) link_scan "${2:-}" ;; help|-h|--help) usage ;;
     *) printf '%bUnknown command:%b %s\n\n' "$amber" "$reset" "$1"; usage; return 2 ;;
   esac
@@ -270,10 +308,12 @@ menu() {
     printf '%b\n' "  ${blue}[03]${reset}  Storage & package health"
     printf '%b\n' "  ${blue}[04]${reset}  Non-destructive update guidance"
     printf '%b\n' "  ${blue}[05]${reset}  Account / network recovery guidance"
-    printf '%b\n' "  ${blue}[06]${reset}  Quick malware-risk scan"
-    printf '%b\n' "  ${blue}[07]${reset}  Full malware-risk scan"
-    printf '%b\n' "  ${blue}[08]${reset}  Review / quarantine findings"
-    printf '%b\n' "  ${blue}[09]${reset}  Scan a link (never opens it)"
+    printf '%b\n' "  ${blue}[06]${reset}  DNS resolver check / repair guidance"
+    printf '%b\n' "  ${blue}[07]${reset}  Quick malware-risk scan"
+    printf '%b\n' "  ${blue}[08]${reset}  Full malware-risk scan"
+    printf '%b\n' "  ${blue}[09]${reset}  Review / quarantine findings"
+    printf '%b\n' "  ${blue}[10]${reset}  Scan a link (never opens it)"
+    printf '%b\n' "  ${blue}[11]${reset}  My Location Maps"
     printf '%b\n' "  ${blue}[H ]${reset}  Command help"
     printf '%b\n' "  ${red}[Q ]${reset}  Exit"
     line
@@ -281,12 +321,13 @@ menu() {
     printf '\n'
     case "$choice" in
       1|01) check_environment ;; 2|02) network_diagnostics ;; 3|03) storage_health ;;
-      4|04) updates_guidance ;; 5|05) recovery_guidance ;; 6|06) malware_scan quick ;;
-      7|07) malware_scan full ;; 8|08) quarantine_findings ;; 9|09)
+      4|04) updates_guidance ;; 5|05) recovery_guidance ;; 6|06) dns_diagnostics ;;
+      7|07) malware_scan quick ;; 8|08) malware_scan full ;; 9|09) quarantine_findings ;; 10)
         read -r -p '  Paste URL to analyze: ' url; link_scan "$url" ;;
+      11) my_location ;;
       h|H) usage ;;
       q|Q) printf 'Stay authorized. Stay safe.\n'; exit 0 ;;
-      *) printf '%bPlease choose 01–09, H, or Q.%b\n' "$amber" "$reset" ;;
+      *) printf '%bPlease choose 01–11, H, or Q.%b\n' "$amber" "$reset" ;;
     esac
     printf '\n'; read -r -p '  Press Enter to return to the menu...' _ || exit 0
   done

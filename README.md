@@ -56,9 +56,11 @@ If it times out, switch networks or retry later; Termux mirrors working does not
 | `./termuxguardian.sh` | Opens the navigable menu | No |
 | `./termuxguardian.sh check` | Prints safe environment metadata and storage summary | No |
 | `./termuxguardian.sh network` | Checks connectivity, DNS, and interface names | No |
+| `./termuxguardian.sh dns` | Checks system DNS, then falls back to `nslookup`/`dig` against 1.1.1.1 | No |
 | `./termuxguardian.sh storage` | Checks home usage and package index readability | No |
 | `./termuxguardian.sh updates` | Prints reviewed, manual update steps | No |
 | `./termuxguardian.sh recovery` | Prints official recovery paths for forgotten access | No |
+| `./termuxguardian.sh location` | Reads Termux:API location and optionally opens OpenStreetMap | Reads location; opens map only after `OPEN` |
 | `./termuxguardian.sh scan quick` | Scans common download locations and the home directory for malware-risk patterns | No |
 | `./termuxguardian.sh scan full` | Performs a deeper local scan; uses ClamAV when installed | No |
 | `./termuxguardian.sh quarantine` | Reviews findings and moves confirmed files into private quarantine | Moves only after confirmation |
@@ -77,13 +79,33 @@ Choose **[09] Scan a link** or run `./termuxguardian.sh link "https://example.co
 
 ## Repository activity
 
-The companion dashboard can show public GitHub metadata such as forks, stars, watchers, and the last update when the repository API permits it. GitHub does **not** expose a public visitor count for most repositories: traffic views require repository-owner access. The dashboard therefore shows `Unavailable` rather than inventing a number. If you have owner access, use **GitHub → Insights → Traffic** for views and unique visitors.
+The companion dashboard now shows live public GitHub repository signals: forks, stars, watchers, open issues, and last update. These are community activity signals, not a hidden user tracker. GitHub does **not** expose public visitor or unique-user counts for most repositories: traffic views require repository-owner access. The dashboard therefore shows `N/A` rather than inventing a number. If you have owner access, use **GitHub → Insights → Traffic** for views and unique visitors.
 
 | Metric | Source | Status |
 | --- | --- | --- |
 | Forks | GitHub repository API | Loaded on the dashboard when available |
 | Stars | GitHub repository API | Loaded on the dashboard when available |
 | Visitors | GitHub Insights → Traffic | Owner-only; not faked |
+
+## DNS and My Location Maps
+
+If the menu shows DNS as `not confirmed`, run:
+
+```bash
+pkg install -y dnsutils
+./termuxguardian.sh dns
+```
+
+The tool first checks the Android/system resolver, then tries `nslookup` or `dig` through `1.1.1.1`. It does not silently rewrite Android network settings. If the fallback works but the system resolver fails, review Android **Private DNS**, switch networks, or restart the network connection.
+
+For location maps, install the Termux:API app from the same trusted source as Termux and then:
+
+```bash
+pkg install -y termux-api
+./termuxguardian.sh location
+```
+
+Grant location permission when Android asks. The command reads coordinates locally, shows the OpenStreetMap URL, and asks you to type `OPEN` before launching it. Coordinates are not stored by Termux Guardian.
 
 ## Ownership and forks
 

@@ -40,11 +40,13 @@ async function loadPublicMetrics() {
     const data = await response.json();
     document.querySelector('#forks').textContent = String(data.forks_count ?? 'N/A');
     document.querySelector('#stars').textContent = String(data.stargazers_count ?? 'N/A');
+    document.querySelector('#watchers').textContent = String(data.subscribers_count ?? data.watchers_count ?? 'N/A');
+    document.querySelector('#issues').textContent = String(data.open_issues_count ?? 'N/A');
     document.querySelector('#updated').textContent = data.updated_at ? new Date(data.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : 'N/A';
     status.textContent = 'PUBLIC DATA / LIVE';
     status.style.color = 'var(--cyan)';
   } catch {
-    ['forks', 'stars', 'updated'].forEach((id) => { document.querySelector(`#${id}`).textContent = 'N/A'; });
+    ['forks', 'stars', 'watchers', 'issues', 'updated'].forEach((id) => { document.querySelector(`#${id}`).textContent = 'N/A'; });
     status.textContent = 'PUBLIC DATA / UNAVAILABLE';
   }
 }
